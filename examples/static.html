@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <div id="graph-container" style="border: 1px solid #ccc; height: 600px;"></div>
+    <script type="module">
+        import { Graph, Node } from "../src/index.ts";
+
+        const graph = new Graph("#graph-container");
+
+        const nodeA = new Node("n-a", "Node A", "A");
+        const nodeB = new Node("n-b", "Node B", "B");
+
+        graph.insertNode(nodeA);
+        graph.insertNode(nodeB);
+
+        setTimeout(() => {
+            const nodeC = new Node("n-c", "Node C", "C");
+            // Node C depends on A and B (variables in scope)
+            graph.insertNodeAfter(nodeC, [nodeA, nodeB]);
+            console.log("Added Node C -> [A, B]");
+        }, 1000);
+
+        setTimeout(() => {
+            const nodeD = new Node("n-d", "Node D", "D");
+            // Node D depends on A and B (variables in scope)
+            graph.insertNodeAfter(nodeD, [nodeA, nodeB]);
+            console.log("Added Node D -> [A, B]");
+        }, 2000);
+
+        setTimeout(() => {
+            const nodeE = new Node("n-e", "Node E", "E");
+            // Node E depends on B (variable in scope)
+            graph.insertNodeAfter(nodeE, [nodeB]);
+            console.log("Added Node E -> [B]");
+        }, 3000);
+
+        setTimeout(() => {
+            const nodeF = new Node("n-f", "Node F", "F");
+            // Node F depends on D and E which are NOT in scope here (in timeouts above)
+            // Using IDs "n-d" and "n-e" to reference them
+            graph.insertNodeAfter(nodeF, ["n-d", "n-e"]);
+            console.log("Added Node F -> [D, E]");
+        }, 4000);
+    </script>
+</body>
+</html>
