@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../dist/animate-graph.css">
+</head>
+<body>
+    <div id="graph-container" style="border: 1px solid #ccc; height: 600px;"></div>
+    <script type="module">
+        import { Graph, Node } from "../../dist/animate-graph.mjs";
+
+        const graph = new Graph("#graph-container");
+
+        const nodeA = new Node("n-a", "Node A", "A");
+        const nodeB = new Node("n-b", "Node B", "B");
+
+        graph.insertNode(nodeA);
+        graph.insertNode(nodeB);
+
+        setTimeout(() => {
+            const nodeC = new Node("n-c", "Node C", "C");
+            // Node C depends on A and B (variables in scope)
+            graph.insertNodeAfter(nodeC, [nodeA, nodeB]);
+            console.log("Added Node C -> [A, B]");
+        }, 1000);
+    </script>
+</body>
+</html>
