@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <div id="controls" style="margin-bottom: 10px;">
+        <input type="range" id="step-slider" min="0" max="0" value="0" style="width: 300px;">
+        <span id="step-display">Step: 0 / 0</span>
+    </div>
+    <div id="graph-container" style="border: 1px solid #ccc; height: 600px;"></div>
+    <script type="module">
+        import { Graph, Node, Animator } from "../src/index.ts";
+
+        const slider = document.getElementById("step-slider");
+        const display = document.getElementById("step-display");
+        const animator = new Animator();
+
+        const graph = new Graph("#graph-container");
+        const nodeA = new Node("n-a", "Node A", "A");
+        const nodeB = new Node("n-b", "Node B", "B");
+        graph.insertNode(nodeA);
+        graph.insertNode(nodeB);
+
+        animator.snap(graph);
+        updateSlider();
+
+        setTimeout(() => {
+            const nodeC = new Node("n-c", "Node C", "C");
+            graph.insertNodeAfter(nodeC, [nodeA, nodeB]);
+            console.log("Added Node C -> [A, B]");
+            animator.snap(graph);
+            updateSlider();
+        }, 100);
+
+        setTimeout(() => {
+            const nodeD = new Node("n-d", "Node D", "D");
+            graph.insertNodeAfter(nodeD, [nodeA, nodeB]);
+            console.log("Added Node D -> [A, B]");
+            animator.snap(graph);
+            updateSlider();
+        }, 200);
+
+        setTimeout(() => {
+            const nodeE = new Node("n-e", "Node E", "E");
+            graph.insertNodeAfter(nodeE, [nodeB]);
+            console.log("Added Node E -> [B]");
+            animator.snap(graph);
+            updateSlider();
+        }, 300);
+
+        setTimeout(() => {
+            const nodeF = new Node("n-f", "Node F", "F");
+            graph.insertNodeAfter(nodeF, ["n-d", "n-e"]);
+            console.log("Added Node F -> [D, E]");
+            animator.snap(graph);
+            updateSlider(true);
+        }, 400);
+
+        slider.addEventListener("input", (e) => {
+            const step = parseInt(e.target.value);
+            animator.goto(step);
+            updateDisplay(step);
+        });
+
+        function updateSlider(moveToEnd = false) {
+            const totalSteps = animator.steps();
+            const maxIdx = Math.max(0, totalSteps - 1);
+            slider.max = maxIdx;
+
+            if (moveToEnd) {
+                slider.value = maxIdx;
+                animator.goto(maxIdx);
+                updateDisplay(maxIdx);
+            } else {
+                slider.value = maxIdx;
+                updateDisplay(maxIdx);
+            }
+        }
+
+        function updateDisplay(step) {
+            display.textContent = `Step: ${step} / ${slider.max}`;
+        }
+    </script>
+</body>
+</html>
