@@ -1,0 +1,29 @@
+name: publish-on-push
+
+on: [push]
+
+jobs:
+  ci:
+    name: Build and publish package
+    runs-on: ubuntu-latest
+    steps:
+        - name: Check out source code
+          uses: actions/checkout@v4
+
+        - name: Enable Corepack
+          run: corepack enable
+
+        - name: Use Node.js 💻
+          uses: actions/setup-node@v4
+          with:
+            node-version: 20
+            cache: yarn
+
+        - name: Install dependencies
+          run: yarn install --immutable
+
+        - name: Build
+          run: yarn build
+
+        - name: Publish package
+          run: yarn pkg-pr-new publish

@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@types/d3": "^7.4.3",
+    "pkg-pr-new": "^0.0.63",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vite-plugin-dts": "^4.5.4"
