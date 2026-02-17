@@ -15,6 +15,30 @@ export class Animator {
     }
   }
 
+  private listeners: Array<(step: number, total: number) => void> = [];
+
+  /**
+   * Subscribe to changes in the animator state.
+   * @param listener - The callback function.
+   */
+  public subscribe(listener: (step: number, total: number) => void) {
+    this.listeners.push(listener);
+  }
+
+  private notify() {
+    this.listeners.forEach((listener) =>
+      listener(this.step, this.frames.length)
+    );
+  }
+
+  /**
+   * Returns the current frame index.
+   * @returns The current frame index.
+   */
+  public getStep() {
+    return this.step;
+  }
+
   /**
    * Returns the number of frames in the animator.
    * @returns The number of frames.
@@ -29,6 +53,7 @@ export class Animator {
    */
   public insert(graph: Graph) {
     this.frames.push(graph);
+    this.notify();
   }
 
   /**
@@ -36,7 +61,7 @@ export class Animator {
    * @param graph - The graph to snapshot.
    */
   public snap(graph: Graph) {
-    this.frames.push(graph.clone());
+    this.insert(graph.clone());
   }
 
   /**
@@ -47,6 +72,7 @@ export class Animator {
     if (step >= 0 && step < this.frames.length) {
       this.step = step;
       this.activateFrame();
+      this.notify();
     }
   }
 
