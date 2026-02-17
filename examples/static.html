@@ -1,10 +1,12 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
+
 <head>
-    <link rel="stylesheet" href="../dist/animate-graph.css">
+    <link rel="stylesheet" href="../dist/animate-graph.css" />
 </head>
+
 <body>
-    <div id="graph-container" style="border: 1px solid #ccc; height: 600px;"></div>
+    <div id="graph-container" style="border: 1px solid #ccc; height: 600px"></div>
     <script type="module">
         import { Graph, Node } from "@veehz/animate-graph";
 
@@ -44,6 +46,27 @@
             graph.insertNodeAfter(nodeF, ["n-d", "n-e"]);
             console.log("Added Node F -> [D, E]");
         }, 4000);
+
+        setTimeout(() => {
+            graph.highlight("n-f");
+            console.log("Highlighted Node F by ID");
+        }, 5000);
+
+        setTimeout(() => {
+            graph.remove_highlight("n-f");
+            console.log("Removed highlight from Node F by ID");
+        }, 6000);
+
+        setTimeout(() => {
+            graph.highlight(nodeB);
+            console.log("Highlighted Node B");
+        }, 7000);
+
+        setTimeout(() => {
+            graph.highlight("n-a-n-c");
+            console.log("Highlighted Edge A -> C");
+        }, 8000);
     </script>
 </body>
+
 </html>

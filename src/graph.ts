@@ -1,6 +1,6 @@
 import * as d3 from "d3";
-import { Node } from "./node";
-import { Edge } from "./edge";
+import { Node, NodeIdType } from "./node";
+import { Edge, EdgeIdType } from "./edge";
 import "./style.css";
 import { GraphStyle, parseGraphStyle } from "./constants";
 
@@ -10,6 +10,9 @@ export class Graph {
   public height: number;
   public nodes: Node[];
   public edges: Edge[];
+
+  public highlighted_nodes: Set<NodeIdType>;
+  public highlighted_edges: Set<EdgeIdType>;
 
   private container: d3.Selection<d3.BaseType, unknown, HTMLElement, any>;
   private svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
@@ -36,6 +39,9 @@ export class Graph {
 
     this.nodes = [];
     this.edges = [];
+
+    this.highlighted_nodes = new Set<NodeIdType>();
+    this.highlighted_edges = new Set<EdgeIdType>();
 
     this.style = parseGraphStyle();
 
@@ -72,6 +78,22 @@ export class Graph {
       .append("svg:path")
       .attr("d", "M 0,-5 L 10 ,0 L 0,5")
       .attr("fill", "#999")
+      .style("stroke", "none");
+
+    this.svg
+      .append("defs")
+      .append("marker")
+      .attr("id", "arrowhead-highlighted")
+      .attr("viewBox", "-0 -5 10 10")
+      .attr("refX", refX)
+      .attr("refY", 0)
+      .attr("orient", "auto")
+      .attr("markerWidth", 6)
+      .attr("markerHeight", 6)
+      .attr("xoverflow", "visible")
+      .append("svg:path")
+      .attr("d", "M 0,-5 L 10 ,0 L 0,5")
+      .attr("fill", "orange")
       .style("stroke", "none");
 
     this.g = this.svg.append("g");
@@ -138,6 +160,9 @@ export class Graph {
     const nodeMerge = nodeEnter.merge(nodes);
 
     nodeMerge.attr("transform", (d) => `translate(${d.x},${d.y})`);
+
+    nodeMerge.classed("highlighted", (d) => this.highlighted_nodes.has(d.id));
+    linkMerge.classed("highlighted", (d) => this.highlighted_edges.has(d.id));
   }
 
   /**
@@ -239,6 +264,8 @@ export class Graph {
     });
     graph.nodes = [...this.nodes];
     graph.edges = [...this.edges];
+    graph.highlighted_nodes = new Set<NodeIdType>(this.highlighted_nodes);
+    graph.highlighted_edges = new Set<EdgeIdType>(this.highlighted_edges);
     return graph;
   }
 
@@ -259,6 +286,44 @@ export class Graph {
    */
   public deactivate() {
     this.svg.remove();
+  }
+
+  public highlight(object: string | Node | Edge) {
+    if (object instanceof Node) {
+      this.highlighted_nodes.add(object.id);
+    } else if (object instanceof Edge) {
+      this.highlighted_edges.add(object.id);
+    } else {
+      const node = this.getNode(object);
+      if (node) {
+        this.highlighted_nodes.add(node.id);
+      }
+      const edge = this.getEdge(object);
+      if (edge) {
+        this.highlighted_edges.add(edge.id);
+      }
+    }
+
+    this.update();
+  }
+
+  public remove_highlight(object: string | Node | Edge) {
+    if (object instanceof Node) {
+      this.highlighted_nodes.delete(object.id);
+    } else if (object instanceof Edge) {
+      this.highlighted_edges.delete(object.id);
+    } else {
+      const node = this.getNode(object);
+      if (node) {
+        this.highlighted_nodes.delete(node.id);
+      }
+      const edge = this.getEdge(object);
+      if (edge) {
+        this.highlighted_edges.delete(edge.id);
+      }
+    }
+
+    this.update();
   }
 
   private calculateEdgePoints(source: Node, target: Node) {
@@ -288,6 +353,21 @@ export class Graph {
   private getNode(idOrNode: string | Node): Node | undefined {
     if ((idOrNode as any).id !== undefined) return idOrNode as Node;
     return this.nodes.find((n) => n.id === idOrNode);
+  }
+
+  private getEdge(idOrEdge: string | Edge): Edge | undefined {
+    if ((idOrEdge as any).id !== undefined) return idOrEdge as Edge;
+    return this.edges.find((e) => e.id === idOrEdge);
+  }
+
+  private getEdgeBetween(
+    idOrNode1: string | Node,
+    idOrNode2: string | Node,
+  ): Edge | undefined {
+    const node1 = this.getNode(idOrNode1);
+    const node2 = this.getNode(idOrNode2);
+    if (!node1 || !node2) return undefined;
+    return this.edges.find((e) => e.source === node1 && e.target === node2);
   }
 
   private findFreePosition(startX: number, startY: number) {
