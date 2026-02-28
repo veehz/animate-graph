@@ -109,7 +109,7 @@ export class Graph {
    */
   public update() {
     const links = this.linkGroup
-      .selectAll<SVGLineElement, Edge>(".g_edge")
+      .selectAll<SVGGElement, Edge>(".g_edge_wrapper")
       .data(this.edges, (d: Edge) => {
         const sId = (d.source as Node).id || (d.source as string);
         const tId = (d.target as Node).id || (d.target as string);
@@ -120,9 +120,12 @@ export class Graph {
 
     const linkEnter = links
       .enter()
-      .append("line")
-      .attr("class", "g_edge")
-      .classed("directed", (d) => d.direction === "directed");
+      .append("g")
+      .attr("class", "g_edge_wrapper");
+
+    linkEnter.append("line").attr("class", "g_edge");
+
+    linkEnter.append("text").attr("class", "edge-label");
 
     const linkMerge = linkEnter.merge(links);
 
@@ -132,11 +135,19 @@ export class Graph {
       if (source && target) {
         const coords = this.calculateEdgePoints(source, target);
 
-        d3.select(nodes[i])
+        const group = d3.select(nodes[i]);
+
+        group.select(".g_edge")
           .attr("x1", coords.x1)
           .attr("y1", coords.y1)
           .attr("x2", coords.x2)
-          .attr("y2", coords.y2);
+          .attr("y2", coords.y2)
+          .classed("directed", d.direction === "directed");
+
+        group.select(".edge-label")
+          .text(d.label !== null ? d.label : "")
+          .attr("x", (coords.x1 + coords.x2) / 2)
+          .attr("y", (coords.y1 + coords.y2) / 2);
       }
     });
 
@@ -170,7 +181,7 @@ export class Graph {
     nodeMerge.attr("transform", (d) => `translate(${d.x},${d.y})`);
 
     nodeMerge.classed("highlighted", (d) => this.highlighted_nodes.has(d.id));
-    linkMerge.classed("highlighted", (d) => this.highlighted_edges.has(d.id));
+    linkMerge.select(".g_edge").classed("highlighted", (d) => this.highlighted_edges.has(d.id));
   }
 
   /**
@@ -335,17 +346,22 @@ export class Graph {
   public insertEdge(
     source: string | Node,
     target: string | Node,
-    options: { direction?: "directed" | "undirected"; type?: string } = {},
+    options: { direction?: "directed" | "undirected"; type?: string; label?: string | ((obj: object) => string) } = {},
   ) {
-    const edge = new Edge(source, target, options.direction, options.type);
+    const edge = new Edge(source, target, options.direction, options.type, options.label);
     this.edges.push(edge);
     this.update();
   }
 
-  public label(node: string | Node, label: string) {
-    const n = this.getNode(node);
-    if (n) {
-      n.label = label;
+  public label(object: string | Node | Edge, label: string | ((obj: object) => string)) {
+    if (object instanceof Node || object instanceof Edge) {
+      object.label = label;
+      this.update();
+    } else {
+      const n = this.getNode(object);
+      if (n) n.label = label;
+      const e = this.getEdge(object);
+      if (e) e.label = label;
       this.update();
     }
   }
@@ -359,8 +375,8 @@ export class Graph {
       width: this.width,
       height: this.height,
     });
-    graph.nodes = deep ? this.nodes.map((n) => n.clone()) : this.nodes;
-    graph.edges = [...this.edges];
+    graph.nodes = deep ? this.nodes.map((n) => n.clone()) : [...this.nodes];
+    graph.edges = deep ? this.edges.map((e) => e.clone()) : [...this.edges];
     graph.highlighted_nodes = new Set<NodeIdType>(this.highlighted_nodes);
     graph.highlighted_edges = new Set<EdgeIdType>(this.highlighted_edges);
     return graph;

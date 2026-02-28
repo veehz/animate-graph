@@ -39,6 +39,7 @@
             const nodeE = new Node("n-e", "E");
             // Node E depends on B (variable in scope)
             graph.insertNodeAfter(nodeE, [nodeB]);
+            graph.label("n-b-n-e", "Depends on B");
             console.log("Added Node E -> [B]");
         }, 3000);
 
