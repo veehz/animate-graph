@@ -150,14 +150,22 @@ export class Graph {
 
     nodeEnter.append("circle").attr("r", this.style.nodeRadius);
 
-    nodeEnter
-      .append("text")
-      .text((d) => d.label)
-      .attr("dy", 4);
+    nodeEnter.append("text").attr("class", "node-name").attr("dy", "0.3em");
+    nodeEnter.append("text").attr("class", "node-label");
 
-    nodeEnter.append("title").text((d) => d.name);
+    nodeEnter.append("title");
 
     const nodeMerge = nodeEnter.merge(nodes);
+
+    nodeMerge.select("circle").attr("r", this.style.nodeRadius);
+
+    nodeMerge.select(".node-name").text((d) => d.name !== null ? d.name : "");
+    nodeMerge.select(".node-label")
+      .text((d) => d.label !== null ? d.label : "")
+      .attr("y", -this.style.nodeRadius - 10)
+      .attr("dx", 0);
+
+    nodeMerge.select("title").text((d) => d.id);
 
     nodeMerge.attr("transform", (d) => `translate(${d.x},${d.y})`);
 
@@ -373,7 +381,8 @@ export class Graph {
   private findFreePosition(startX: number, startY: number) {
     const NODE_RADIUS = this.style.nodeRadius;
     const NODE_GAP = this.style.nodeGap;
-    const VERTICAL_SPACING = NODE_RADIUS * 2 + NODE_GAP;
+    const LABEL_HEIGHT = 20; // Estimated height for the top label
+    const VERTICAL_SPACING = NODE_RADIUS * 2 + NODE_GAP + LABEL_HEIGHT;
 
     let x = startX;
     let y = startY;

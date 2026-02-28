@@ -21,10 +21,17 @@
     font-size: 16px;
     font-weight: normal;
     pointer-events: none;
-    text-anchor: middle;
     alignment-baseline: middle;
     fill: #000;
     stroke: none;
+}
+
+.g_node text.node-name {
+    text-anchor: middle;
+}
+
+.g_node text.node-label {
+    text-anchor: middle;
 }
 
 .g_node.highlighted circle {

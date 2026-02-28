@@ -8,16 +8,19 @@
     <script type="module">
         import { Graph, Node } from "../../dist/animate-graph.mjs";
 
-        const graph = new Graph("#graph-container");
+        const graph = new Graph("#graph-container", {
+            height: document.getElementById("graph-container").clientHeight,
+            width: document.getElementById("graph-container").clientWidth
+        });
 
-        const nodeA = new Node("n-a", "Node A", "A");
-        const nodeB = new Node("n-b", "Node B", "B");
+        const nodeA = new Node("n-a", "A");
+        const nodeB = new Node("n-b", "B");
 
         graph.insertNode(nodeA);
         graph.insertNode(nodeB);
 
         setTimeout(() => {
-            const nodeC = new Node("n-c", "Node C", "C");
+            const nodeC = new Node("n-c", "C");
             // Node C depends on A and B (variables in scope)
             graph.insertNodeAfter(nodeC, [nodeA, nodeB]);
             console.log("Added Node C -> [A, B]");

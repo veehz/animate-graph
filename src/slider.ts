@@ -24,8 +24,8 @@ export class Slider {
     this.input.type = "range";
     this.input.className = "ag-slider-input";
     this.input.min = "0";
-    this.input.max = Math.max(0, this.animator.steps() - 1).toString();
-    this.input.value = this.animator.getStep().toString();
+    this.input.max = Math.max(0, this.animator.length - 1).toString();
+    this.input.value = this.animator.currentStep.toString();
 
     // Create label
     this.label = document.createElement("span");
@@ -53,8 +53,8 @@ export class Slider {
   }
 
   private updateLabel() {
-    this.label.textContent = `Step: ${this.animator.getStep()} / ${
-      this.animator.steps() - 1
+    this.label.textContent = `Step: ${this.animator.currentStep} / ${
+      this.animator.length - 1
     }`;
   }
 }

@@ -1,12 +1,38 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <link rel="stylesheet" href="../../dist/animate-graph.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="../../dist/animate-graph.umd.js"></script>
+    <script src="https://veehz.github.io/torch/build/browser/torch.browser.umd.js"></script>
+</head>
 <body>
     <div id="controls" style="margin-bottom: 10px;">
         <!-- Slider will be injected here -->
     </div>
     <div id="graph-container" style="border: 1px solid #ccc; height: 600px;"></div>
-    <script type="module">
-        import { Graph, Node, Animator, Slider } from "@veehz/animate-graph";
+    <script>
+        const { Graph, Node, Animator, Slider } = AnimateGraph;
+        const torch = window.torch;
+
+
+        for(const event of Object.values(torch.events)) {
+            torch.eventBus.addEventListener(event, (e) => {
+                console.log(event, e);
+            });
+        }
+
+        const a = new torch.Tensor([1, 2, 3], { requires_grad: true });
+        console.log(a);
+
+        const b = new torch.Tensor([4, 5, 6], { requires_grad: true });
+        console.log(b);
+
+        const c = a.add(b);
+        console.log(c);
+        
+        const d = c.sum();
+        d.backward();
 
         const animator = new Animator();
         const slider = new Slider("#controls", animator);
@@ -49,60 +75,8 @@
             graph.insertNodeAfter(nodeF, ["n-d", "n-e"]);
             console.log("Added Node F -> [D, E]");
             animator.snap(graph);
-        }, 400);
-
-        // Highlighting
-
-        setTimeout(() => {
-            graph.highlight("n-a");
-            animator.snap(graph);
-        }, 500);
-
-        setTimeout(() => {
-            graph.highlight("n-a-n-d");
-            animator.snap(graph);
-        }, 600);
-
-        setTimeout(() => {
-            graph.highlight("n-d");
-            animator.snap(graph);
-        }, 700);
-
-        setTimeout(() => {
-            graph.highlight("n-d-n-f");
-            animator.snap(graph);
-        }, 800);
-
-        setTimeout(() => {
-            graph.highlight("n-f");
-            animator.snap(graph);
-        }, 900);
-
-        setTimeout(() => {
-            graph.remove_highlight("n-f");
-            animator.snap(graph);
-        }, 1000);
-
-        setTimeout(() => {
-            graph.remove_highlight("n-d-n-f");
-            animator.snap(graph);
-        }, 1100);
-
-        setTimeout(() => {
-            graph.remove_highlight("n-d");
-            animator.snap(graph);
-        }, 1200);
-
-        setTimeout(() => {
-            graph.remove_highlight("n-a-n-d");
-            animator.snap(graph);
-        }, 1300);
-
-        setTimeout(() => {
-            graph.remove_highlight("n-a");
-            animator.snap(graph);
             animator.last();
-        }, 1400);
+        }, 400);
     </script>
 </body>
 </html>

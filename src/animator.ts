@@ -20,9 +20,13 @@ export class Animator {
   /**
    * Subscribe to changes in the animator state.
    * @param listener - The callback function.
+   * @returns An unsubscribe function.
    */
-  public subscribe(listener: (step: number, total: number) => void) {
+  public subscribe(listener: (step: number, total: number) => void): () => void {
     this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter((l) => l !== listener);
+    };
   }
 
   private notify() {
@@ -35,7 +39,7 @@ export class Animator {
    * Returns the current frame index.
    * @returns The current frame index.
    */
-  public getStep() {
+  public get currentStep() {
     return this.step;
   }
 
@@ -43,7 +47,7 @@ export class Animator {
    * Returns the number of frames in the animator.
    * @returns The number of frames.
    */
-  public steps() {
+  public get length() {
     return this.frames.length;
   }
 
@@ -57,8 +61,8 @@ export class Animator {
   }
 
   /**
-   * Inserts a snapshot of the current graph state into the animator.
-   * @param graph - The graph to snapshot.
+   * Inserts a clone of the current graph state into the animator.
+   * @param graph - The graph to clone.
    */
   public snap(graph: Graph) {
     this.insert(graph.clone());
@@ -69,46 +73,55 @@ export class Animator {
    * @param step - The frame number to move to.
    */
   public goto(step: number) {
-    if (step >= 0 && step < this.frames.length) {
-      this.step = step;
-      this.activateFrame();
-      this.notify();
+    if (step < 0 || step >= this.frames.length) {
+      return false;
     }
+
+    this.step = step;
+    this.activateFrame();
+    this.notify();
+    return true;
   }
 
   /**
    * Moves to the next frame in the animation.
    */
   public next() {
-    this.goto(this.step + 1);
+    return this.goto(this.step + 1);
   }
 
   /**
    * Moves to the previous frame in the animation.
    */
   public prev() {
-    this.goto(this.step - 1);
+    return this.goto(this.step - 1);
   }
 
   /**
    * Moves to the first frame in the animation.
    */
   public first() {
-    this.goto(0);
+    return this.goto(0);
   }
 
   /**
    * Moves to the last frame in the animation.
    */
   public last() {
-    this.goto(this.frames.length - 1);
+    return this.goto(this.frames.length - 1);
+  }
+
+  /**
+   * Gets the current frame in the animation.
+   */
+  public get currentFrame() {
+    return this.frames[this.step];
   }
 
   /**
    * Activates the current frame in the animation.
    */
   private activateFrame() {
-    const frame = this.frames[this.step];
-    frame.activate();
+    this.currentFrame.activate();
   }
 }
