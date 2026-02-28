@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <link rel="stylesheet" href="../../dist/animate-graph.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="../../dist/animate-graph.umd.js"></script>
     <script src="https://veehz.github.io/torch/build/browser/torch.browser.umd.js"></script>
 </head>
+
 <body>
     <div id="controls" style="margin-bottom: 10px;">
         <!-- Slider will be injected here -->
@@ -15,24 +17,16 @@
         const { Graph, Node, Animator, Slider } = AnimateGraph;
         const torch = window.torch;
 
-
-        for(const event of Object.values(torch.events)) {
-            torch.eventBus.addEventListener(event, (e) => {
-                console.log(event, e);
-            });
-        }
-
         const a = new torch.Tensor([1, 2, 3], { requires_grad: true });
         console.log(a);
 
         const b = new torch.Tensor([4, 5, 6], { requires_grad: true });
         console.log(b);
 
-        const c = a.add(b);
+        const c = a.mul(b);
         console.log(c);
-        
+
         const d = c.sum();
-        d.backward();
 
         const animator = new Animator();
         const slider = new Slider("#controls", animator);
@@ -42,41 +36,74 @@
             width: document.getElementById("graph-container").clientWidth
         });
 
-        const nodeA = new Node("n-a", "A");
-        const nodeB = new Node("n-b", "B");
-        graph.insertNode(nodeA);
-        graph.insertNode(nodeB);
+        function buildGraph(graph, tensor) {
+            function buildAccumulateGrad(operation) {
+                const tensorNode = new Node(operation.variable.id, "t"+operation.variable.id);
+                const accumNode = new Node(operation.id, "Accum");
+                graph.insertNode(tensorNode);
+                graph.insertNodeAfter(accumNode, tensorNode);
+                return accumNode;
+            }
 
+            function buildOperation(operation) {
+                if (operation instanceof torch.AccumulateGrad) {
+                    return buildAccumulateGrad(operation);
+                }
+
+                const operationsBefore = [];
+                for (const op of operation.next_functions) {
+                    operationsBefore.push(buildOperation(op));
+                }
+
+                const operationNode = new Node(operation.id, operation.constructor.name);
+                graph.insertNodeAfter(operationNode, operationsBefore);
+                return operationNode;
+            }
+
+            const output = new Node(tensor.id, "t"+tensor.id);
+            if (tensor.grad_fn) {
+                const operation = buildOperation(tensor.grad_fn);
+                graph.insertNodeAfter(output, operation);
+            } else {
+                graph.insertNode(output);
+            }
+        }
+
+        buildGraph(graph, d);
         animator.snap(graph);
 
-        setTimeout(() => {
-            const nodeC = new Node("n-c", "C");
-            graph.insertNodeAfter(nodeC, [nodeA, nodeB]);
-            console.log("Added Node C -> [A, B]");
+        torch.eventBus.addEventListener(torch.events.TENSOR_BEFORE_BACKWARD, (e) => {
+            graph.highlight(e.detail.tensor.id);
             animator.snap(graph);
-        }, 100);
+        });
+        torch.eventBus.addEventListener(torch.events.TENSOR_AFTER_BACKWARD, (e) => {
+            graph.remove_highlight(e.detail.tensor.id);
+            animator.snap(graph);
+        });
 
-        setTimeout(() => {
-            const nodeD = new Node("n-d", "D");
-            graph.insertNodeAfter(nodeD, [nodeA, nodeB]);
-            console.log("Added Node D -> [A, B]");
+        torch.eventBus.addEventListener(torch.events.OPERATION_BEFORE_BACKWARD, (e) => {
+            graph.highlight(e.detail.operation.id);
             animator.snap(graph);
-        }, 200);
+        });
+        torch.eventBus.addEventListener(torch.events.OPERATION_AFTER_BACKWARD, (e) => {
+            graph.remove_highlight(e.detail.operation.id);
+            animator.snap(graph);
+        });
+        
+        torch.eventBus.addEventListener(torch.events.OPERATION_AFTER_ACCUMULATE_GRAD, (e) => {
+            graph.highlight(e.detail.operation.variable.id);
+            animator.snap(graph);
 
-        setTimeout(() => {
-            const nodeE = new Node("n-e", "E");
-            graph.insertNodeAfter(nodeE, [nodeB]);
-            console.log("Added Node E -> [B]");
-            animator.snap(graph);
-        }, 300);
+            graph.label(e.detail.operation.variable.id, `grad=[${e.detail.operation.variable.grad.data}]`);
 
-        setTimeout(() => {
-            const nodeF = new Node("n-f", "F");
-            graph.insertNodeAfter(nodeF, ["n-d", "n-e"]);
-            console.log("Added Node F -> [D, E]");
+            graph.remove_highlight(e.detail.operation.variable.id);
             animator.snap(graph);
-            animator.last();
-        }, 400);
+        });
+
+        d.backward();
+
+        animator.last();
     </script>
 </body>
+
 </html>

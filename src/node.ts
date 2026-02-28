@@ -33,4 +33,8 @@ export class Node {
   public set label(label: string | ((obj: object) => string)) {
     this._label = label;
   }
+
+  public clone(): Node {
+    return new Node(this.id, this.name, this._label, this.x, this.y);
+  }
 }

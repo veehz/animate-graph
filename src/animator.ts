@@ -65,7 +65,7 @@ export class Animator {
    * @param graph - The graph to clone.
    */
   public snap(graph: Graph) {
-    this.insert(graph.clone());
+    this.insert(graph.clone(true));
   }
 
   /**

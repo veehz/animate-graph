@@ -243,6 +243,87 @@ export class Graph {
     });
   }
 
+  public insertNodesAfter(
+    nodes: Node | Node[],
+    afterNodes: string | Node | (string | Node)[],
+  ) {
+    if (Array.isArray(nodes)) {
+      nodes.forEach((node) => {
+        this.insertNodeAfter(node, afterNodes);
+      });
+    } else {
+      this.insertNodeAfter(nodes, afterNodes);
+    }
+  }
+
+  /**
+   * Inserts a new node before one or more existing nodes.
+   * @param node - The node to insert.
+   * @param beforeNodes - The node or array of nodes before which to insert the new node.
+   */
+  public insertNodeBefore(
+    node: Node,
+    beforeNodes: string | Node | (string | Node)[],
+  ) {
+    const targets = Array.isArray(beforeNodes) ? beforeNodes : [beforeNodes];
+
+    let minX = Infinity;
+    let sumY = 0;
+    let count = 0;
+
+    targets.forEach((target) => {
+      const tNode = this.getNode(target);
+      if (tNode && tNode.x !== null && tNode.y !== null) {
+        if (tNode.x < minX) minX = tNode.x;
+        sumY += tNode.y;
+        count++;
+      }
+    });
+
+    const LEVEL_WIDTH = this.style.levelWidth;
+
+    if (count > 0) {
+      const startX = minX - LEVEL_WIDTH;
+      const startY = sumY / count;
+
+      if (node.x === null || node.y === null) {
+        const pos = this.findFreePosition(startX, startY);
+        node.x = pos.x;
+        node.y = pos.y;
+      }
+    } else {
+      if (node.x === null || node.y === null) {
+        const pos = this.findFreePosition(0, 0);
+        node.x = pos.x;
+        node.y = pos.y;
+      }
+    }
+
+    this.insertNode(node);
+
+    targets.forEach((target) => {
+      this.insertEdge(node, target);
+    });
+  }
+
+  /**
+   * Inserts new nodes before one or more existing nodes.
+   * @param nodes - The node or array of nodes to insert.
+   * @param beforeNodes - The node or array of nodes before which to insert the new nodes.
+   */
+  public insertNodesBefore(
+    nodes: Node | Node[],
+    beforeNodes: string | Node | (string | Node)[],
+  ) {
+    if (Array.isArray(nodes)) {
+      nodes.forEach((node) => {
+        this.insertNodeBefore(node, beforeNodes);
+      });
+    } else {
+      this.insertNodeBefore(nodes, beforeNodes);
+    }
+  }
+
   /**
    * Inserts a new edge between two nodes.
    * @param source - The source node or its ID.
@@ -261,16 +342,24 @@ export class Graph {
     this.update();
   }
 
+  public label(node: string | Node, label: string) {
+    const n = this.getNode(node);
+    if (n) {
+      n.label = label;
+      this.update();
+    }
+  }
+
   /**
    * Clones the graph.
    * @returns A new Graph instance with the same nodes and edges.
    */
-  public clone(): Graph {
+  public clone(deep: boolean = false): Graph {
     const graph = new Graph(this.selector, {
       width: this.width,
       height: this.height,
     });
-    graph.nodes = [...this.nodes];
+    graph.nodes = deep ? this.nodes.map((n) => n.clone()) : this.nodes;
     graph.edges = [...this.edges];
     graph.highlighted_nodes = new Set<NodeIdType>(this.highlighted_nodes);
     graph.highlighted_edges = new Set<EdgeIdType>(this.highlighted_edges);
