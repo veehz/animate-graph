@@ -3,9 +3,9 @@ import { resolve } from "path";
 
 export default defineConfig({
   root: "examples",
-  base: "/animate-graph/examples/", // For GitHub pages deployment
+  base: "/animate-graph/media/examples/", // For GitHub pages deployment
   build: {
-    outDir: "../docs/examples",
+    outDir: "../docs/media/examples",
     emptyOutDir: true,
     rollupOptions: {
       input: {
