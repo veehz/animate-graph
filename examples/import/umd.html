@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../dist/animate-graph.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="../../dist/animate-graph.umd.js"></script>
+</head>
+<body>
+    <div id="graph-container" style="border: 1px solid #ccc; height: 600px;"></div>
+    <script>
+        const { Graph, Node } = AnimateGraph;
+
+        const graph = new Graph("#graph-container", {
+            height: document.getElementById("graph-container").clientHeight,
+            width: document.getElementById("graph-container").clientWidth
+        });
+
+        const nodeA = new Node("n-a", "A");
+        const nodeB = new Node("n-b", "B");
+
+        graph.insertNode(nodeA);
+        graph.insertNode(nodeB);
+
+        setTimeout(() => {
+            const nodeC = new Node("n-c", "C");
+            // Node C depends on A and B (variables in scope)
+            graph.insertNodeAfter(nodeC, [nodeA, nodeB]);
+            console.log("Added Node C -> [A, B]");
+        }, 1000);
+    </script>
+</body>
+</html>
