@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DFS Visualization</title>
+    <link rel="stylesheet" href="../../dist/animate-graph.css" />
+</head>
+<body>
+    <div id="controls" style="margin-bottom: 10px;"></div>
+    <div id="graph-container" style="border: 1px solid #ccc; height: 600px; width: 100%;"></div>
+
+    <script type="module">
+        import { Graph, Node, Animator, Slider } from "@veehz/animate-graph";
+
+        const animator = new Animator();
+        const slider = new Slider("#controls", animator);
+
+        const container = document.getElementById("graph-container");
+        const graph = new Graph("#graph-container", {
+            height: container.clientHeight,
+            width: container.clientWidth
+        });
+
+        // Setup Nodes
+        const nodes = {
+            A: new Node("A", "A"),
+            B: new Node("B", "B"),
+            C: new Node("C", "C"),
+            D: new Node("D", "D"),
+            E: new Node("E", "E"),
+            F: new Node("F", "F")
+        };
+
+        graph.insertNode(nodes.A);
+        graph.insertNodeAfter(nodes.B, [nodes.A]);
+        graph.insertNodeAfter(nodes.C, [nodes.A]);
+        graph.insertNodeAfter(nodes.D, [nodes.B]);
+        graph.insertNodeAfter(nodes.E, [nodes.B, nodes.C]);
+        graph.insertNodeAfter(nodes.F, [nodes.C]);
+
+        animator.snap(graph);
+
+        // DFS Algorithm Animation
+        const adj = {
+            A: ["B", "C"],
+            B: ["D", "E"],
+            C: ["E", "F"],
+            D: [],
+            E: [],
+            F: []
+        };
+
+        const stack = ["A"];
+        const visited = new Set();
+        let counter = 1;
+
+        while (stack.length > 0) {
+            const u = stack.pop();
+
+            if (!visited.has(u)) {
+                visited.add(u);
+
+                graph.highlight(nodes[u]);
+                graph.label(nodes[u], `Visited ${counter++}`);
+                animator.snap(graph);
+
+                // Reverse to visit left branch first
+                const neighbors = [...adj[u]].reverse();
+                for (const v of neighbors) {
+                    if (!visited.has(v)) {
+                        stack.push(v);
+
+                        graph.highlight(`${u}-${v}`);
+                        animator.snap(graph);
+                    }
+                }
+            }
+        }
+
+        animator.last();
+
+    </script>
+</body>
+</html>

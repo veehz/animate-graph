@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dijkstra Visualization</title>
+    <link rel="stylesheet" href="../../dist/animate-graph.css" />
+</head>
+<body>
+    <div id="controls" style="margin-bottom: 10px;"></div>
+    <div id="graph-container" style="border: 1px solid #ccc; height: 600px; width: 100%;"></div>
+
+    <script type="module">
+        import { Graph, Node, Animator, Slider } from "@veehz/animate-graph";
+
+        const animator = new Animator();
+        const slider = new Slider("#controls", animator);
+
+        const container = document.getElementById("graph-container");
+        const graph = new Graph("#graph-container", {
+            height: container.clientHeight,
+            width: container.clientWidth
+        });
+
+        const nodes = {
+            A: new Node("A", "A"),
+            B: new Node("B", "B"),
+            C: new Node("C", "C"),
+            D: new Node("D", "D"),
+            E: new Node("E", "E")
+        };
+
+        graph.insertNode(nodes.A);
+        graph.insertNodeAfter(nodes.B, [nodes.A]);
+        graph.insertNodeAfter(nodes.C, [nodes.A]);
+        graph.insertNodeAfter(nodes.D, [nodes.B, nodes.C]);
+        graph.insertNodeAfter(nodes.E, [nodes.D]);
+        graph.insertEdge(nodes.C, nodes.E);
+
+        const weights = {
+            "A-B": 4,
+            "A-C": 2,
+            "B-D": 5,
+            "C-D": 8,
+            "C-E": 10,
+            "D-E": 3
+        };
+
+        for (const [edgeId, weight] of Object.entries(weights)) {
+            graph.label(edgeId, weight.toString());
+        }
+
+        // initialize labels
+        for (const [id, node] of Object.entries(nodes)) {
+            graph.label(node, "∞");
+        }
+        graph.label(nodes.A, "0");
+        animator.snap(graph);
+
+        const dist = { A: 0, B: Infinity, C: Infinity, D: Infinity, E: Infinity };
+        const unvisited = new Set(["A", "B", "C", "D", "E"]);
+        const adj = {
+            A: [{target: "B", weight: 4}, {target: "C", weight: 2}],
+            B: [{target: "D", weight: 5}],
+            C: [{target: "D", weight: 8}, {target: "E", weight: 10}],
+            D: [{target: "E", weight: 3}],
+            E: []
+        };
+
+        while (unvisited.size > 0) {
+            let u = null;
+            let minDist = Infinity;
+            for (const node of unvisited) {
+                if (dist[node] < minDist) {
+                    minDist = dist[node];
+                    u = node;
+                }
+            }
+            if (u === null) break;
+
+            unvisited.delete(u);
+            graph.highlight(nodes[u]);
+            animator.snap(graph);
+
+            for (const edge of adj[u]) {
+                const v = edge.target;
+                if (!unvisited.has(v)) continue;
+
+                graph.highlight(`${u}-${v}`);
+                animator.snap(graph);
+
+                const alt = dist[u] + edge.weight;
+                if (alt < dist[v]) {
+                    dist[v] = alt;
+                    graph.label(nodes[v], alt.toString());
+                    animator.snap(graph);
+                }
+                graph.remove_highlight(`${u}-${v}`);
+            }
+        }
+
+        animator.last();
+
+    </script>
+</body>
+</html>

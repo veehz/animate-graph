@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BFS Visualization</title>
+    <link rel="stylesheet" href="../../dist/animate-graph.css" />
+</head>
+<body>
+    <div id="controls" style="margin-bottom: 10px;"></div>
+    <div id="graph-container" style="border: 1px solid #ccc; height: 600px; width: 100%;"></div>
+
+    <script type="module">
+        import { Graph, Node, Animator, Slider } from "@veehz/animate-graph";
+
+        const animator = new Animator();
+        const slider = new Slider("#controls", animator);
+
+        const container = document.getElementById("graph-container");
+        const graph = new Graph("#graph-container", {
+            height: container.clientHeight,
+            width: container.clientWidth
+        });
+
+        // Setup Nodes
+        const nodes = {
+            A: new Node("A", "A"),
+            B: new Node("B", "B"),
+            C: new Node("C", "C"),
+            D: new Node("D", "D"),
+            E: new Node("E", "E"),
+            F: new Node("F", "F")
+        };
+
+        graph.insertNode(nodes.A);
+        graph.insertNodeAfter(nodes.B, [nodes.A]);
+        graph.insertNodeAfter(nodes.C, [nodes.A]);
+        graph.insertNodeAfter(nodes.D, [nodes.B]);
+        graph.insertNodeAfter(nodes.E, [nodes.B, nodes.C]);
+        graph.insertNodeAfter(nodes.F, [nodes.C]);
+
+        animator.snap(graph);
+
+        // BFS Algorithm Animation
+        const adj = {
+            A: ["B", "C"],
+            B: ["D", "E"],
+            C: ["E", "F"],
+            D: [],
+            E: [],
+            F: []
+        };
+
+        const queue = ["A"];
+        const visited = new Set(["A"]);
+
+        graph.highlight(nodes.A);
+        graph.label(nodes.A, "0");
+        animator.snap(graph);
+
+        let distance = 1;
+
+        while (queue.length > 0) {
+            let levelSize = queue.length;
+
+            for (let i = 0; i < levelSize; i++) {
+                const u = queue.shift();
+
+                for (const v of adj[u]) {
+                    if (!visited.has(v)) {
+                        visited.add(v);
+                        queue.push(v);
+
+                        graph.highlight(`${u}-${v}`);
+                        animator.snap(graph);
+
+                        graph.highlight(nodes[v]);
+                        graph.label(nodes[v], distance.toString());
+                        animator.snap(graph);
+                    }
+                }
+            }
+            distance++;
+        }
+
+        animator.last();
+
+    </script>
+</body>
+</html>
