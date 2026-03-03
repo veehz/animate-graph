@@ -22,6 +22,8 @@ export class Graph {
 
   public style: GraphStyle;
 
+  public offset: { x: number; y: number } = { x: 0, y: 0 };
+
   /**
    * Creates a new Graph instance.
    * @param selector - The CSS selector for the container element.
@@ -101,7 +103,22 @@ export class Graph {
     this.linkGroup = this.g.append("g").attr("class", "links");
     this.nodeGroup = this.g.append("g").attr("class", "nodes");
 
+    this.svg.call(
+      d3
+        .drag<SVGSVGElement, unknown>()
+        .on("drag", (event) => {
+          this.offset.x += event.dx;
+          this.offset.y += event.dy;
+          this.updateTransform();
+        })
+    );
+
+    this.updateTransform();
     this.update();
+  }
+
+  public updateTransform() {
+    this.g.attr("transform", `translate(${this.offset.x}, ${this.offset.y})`);
   }
 
   /**
@@ -370,15 +387,17 @@ export class Graph {
    * Clones the graph.
    * @returns A new Graph instance with the same nodes and edges.
    */
-  public clone(deep: boolean = false): Graph {
+  public clone(deepCloneElements: boolean = false, deepCloneOffset: boolean = false): Graph {
     const graph = new Graph(this.selector, {
       width: this.width,
       height: this.height,
     });
-    graph.nodes = deep ? this.nodes.map((n) => n.clone()) : [...this.nodes];
-    graph.edges = deep ? this.edges.map((e) => e.clone()) : [...this.edges];
+    graph.nodes = deepCloneElements ? this.nodes.map((n) => n.clone()) : [...this.nodes];
+    graph.edges = deepCloneElements ? this.edges.map((e) => e.clone()) : [...this.edges];
     graph.highlighted_nodes = new Set<NodeIdType>(this.highlighted_nodes);
     graph.highlighted_edges = new Set<EdgeIdType>(this.highlighted_edges);
+    graph.offset = deepCloneOffset ? { ...this.offset } : this.offset;
+    graph.updateTransform();
     return graph;
   }
 
@@ -391,6 +410,7 @@ export class Graph {
     (this.container.node() as Element)?.appendChild(
       this.svg.node() as unknown as globalThis.Node,
     );
+    this.updateTransform();
     this.update();
   }
 
