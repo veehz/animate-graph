@@ -15,6 +15,9 @@ export class Node {
     x: number | null = null,
     y: number | null = null,
   ) {
+    if(id === undefined) {
+      console.error("Node id is undefined");
+    }
     this.id = id;
     this.name = name;
     this._label = label;

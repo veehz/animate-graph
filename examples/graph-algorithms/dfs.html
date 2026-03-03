@@ -9,7 +9,7 @@
     <div id="graph-container" style="border: 1px solid #ccc; height: 600px; width: 100%;"></div>
 
     <script type="module">
-        import { Graph, Node, Animator, Slider } from "@veehz/animate-graph";
+        import { Graph, Node, Edge, Animator, Slider } from "@veehz/animate-graph";
 
         const animator = new Animator();
         const slider = new Slider("#controls", animator);
@@ -20,26 +20,8 @@
             width: container.clientWidth
         });
 
-        // Setup Nodes
-        const nodes = {
-            A: new Node("A", "A"),
-            B: new Node("B", "B"),
-            C: new Node("C", "C"),
-            D: new Node("D", "D"),
-            E: new Node("E", "E"),
-            F: new Node("F", "F")
-        };
-
-        graph.insertNode(nodes.A);
-        graph.insertNodeAfter(nodes.B, [nodes.A]);
-        graph.insertNodeAfter(nodes.C, [nodes.A]);
-        graph.insertNodeAfter(nodes.D, [nodes.B]);
-        graph.insertNodeAfter(nodes.E, [nodes.B, nodes.C]);
-        graph.insertNodeAfter(nodes.F, [nodes.C]);
-
-        animator.snap(graph);
-
-        // DFS Algorithm Animation
+        // Node and edges
+        const root = "A";
         const adj = {
             A: ["B", "C"],
             B: ["D", "E"],
@@ -49,7 +31,24 @@
             F: []
         };
 
-        const stack = ["A"];
+        // Setup Nodes
+        const nodes = {};
+        for(const from in adj) {
+            nodes[from] = new Node(from, from);
+        }
+
+        graph.insertNode(nodes[root]);
+
+        for(const from in adj) {
+            const toNodes = adj[from];
+            for(const to of toNodes) {
+                graph.insertNodesAfter(nodes[to], [nodes[from]]);
+            }
+        }
+
+        animator.snap(graph);
+
+        const stack = [root];
         const visited = new Set();
         let counter = 1;
 
@@ -69,7 +68,7 @@
                     if (!visited.has(v)) {
                         stack.push(v);
 
-                        graph.highlight(`${u}-${v}`);
+                        graph.highlight(Edge.defaultEdgeId(u, v));
                         animator.snap(graph);
                     }
                 }

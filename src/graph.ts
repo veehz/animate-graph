@@ -227,9 +227,10 @@ export class Graph {
    * @param afterNodes - The node or array of nodes after which to insert the new node.
    */
   public insertNodeAfter(
-    node: Node,
-    afterNodes: string | Node | (string | Node)[],
+    node: NodeIdType | Node,
+    afterNodes: NodeIdType | Node | (NodeIdType | Node)[],
   ) {
+    node = this.getNode(node);
     const sources = Array.isArray(afterNodes) ? afterNodes : [afterNodes];
 
     let maxX = -Infinity;
@@ -273,7 +274,7 @@ export class Graph {
 
   public insertNodesAfter(
     nodes: Node | Node[],
-    afterNodes: string | Node | (string | Node)[],
+    afterNodes: NodeIdType | Node | (NodeIdType | Node)[],
   ) {
     if (Array.isArray(nodes)) {
       nodes.forEach((node) => {
@@ -290,9 +291,10 @@ export class Graph {
    * @param beforeNodes - The node or array of nodes before which to insert the new node.
    */
   public insertNodeBefore(
-    node: Node,
-    beforeNodes: string | Node | (string | Node)[],
+    node: NodeIdType | Node,
+    beforeNodes: NodeIdType | Node | (NodeIdType | Node)[],
   ) {
+    node = this.getNode(node);
     const targets = Array.isArray(beforeNodes) ? beforeNodes : [beforeNodes];
 
     let minX = Infinity;
@@ -341,7 +343,7 @@ export class Graph {
    */
   public insertNodesBefore(
     nodes: Node | Node[],
-    beforeNodes: string | Node | (string | Node)[],
+    beforeNodes: NodeIdType | Node | (NodeIdType | Node)[],
   ) {
     if (Array.isArray(nodes)) {
       nodes.forEach((node) => {
@@ -361,8 +363,8 @@ export class Graph {
    * @param options.type - The type of the edge.
    */
   public insertEdge(
-    source: string | Node,
-    target: string | Node,
+    source: NodeIdType | Node,
+    target: NodeIdType | Node,
     options: { direction?: "directed" | "undirected"; type?: string; label?: string | ((obj: object) => string) } = {},
   ) {
     const edge = new Edge(source, target, options.direction, options.type, options.label);

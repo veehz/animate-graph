@@ -24,9 +24,11 @@ export class Edge {
     this.direction = direction;
     this.type = type;
     this._label = label;
-    this.id =
-      id ||
-      `${source instanceof Node ? source.id : source}-${target instanceof Node ? target.id : target}`;
+    this.id = id || Edge.defaultEdgeId(source, target);
+  }
+
+  static defaultEdgeId(source: NodeIdType | Node, target: NodeIdType | Node): EdgeIdType {
+    return `${source instanceof Node ? source.id : source}-${target instanceof Node ? target.id : target}`;
   }
 
   public get label(): string {
