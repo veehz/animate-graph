@@ -16,16 +16,15 @@
         import { Graph, Node, Animator, Slider } from "@veehz/animate-graph";
         const torch = window.torch;
 
-        const a = new torch.Tensor([1, 2, 3], { requires_grad: true });
-        console.log(a);
+        const seq = new torch.nn.Sequential(
+            new torch.nn.Linear(2, 2),
+            new torch.nn.ReLU(),
+            new torch.nn.Linear(2, 3),
+        );
 
-        const b = new torch.Tensor([4, 5, 6], { requires_grad: true });
-        console.log(b);
-
-        const c = a.mul(b);
-        console.log(c);
-
-        const d = c.sum();
+        const input = new torch.Tensor([1, 2]);
+        const res = seq.forward(input);
+        const target = res.sum();
 
         const animator = new Animator();
         const slider = new Slider("#controls", animator);
@@ -68,7 +67,7 @@
             }
         }
 
-        buildGraph(graph, d);
+        buildGraph(graph, target);
         animator.snap(graph);
 
         torch.eventBus.addEventListener(torch.events.TENSOR_BEFORE_BACKWARD, (e) => {
@@ -93,13 +92,14 @@
             graph.highlight(e.detail.operation.variable.id);
             animator.snap(graph);
 
-            graph.label(e.detail.operation.variable.id, `grad=[${e.detail.operation.variable.grad.data}]`);
+            graph.label(e.detail.operation.variable.id, `grad=[${e.detail.operation.variable.grad.data.map(x => x.toFixed(2)).join(", ")}]`);
 
             graph.remove_highlight(e.detail.operation.variable.id);
             animator.snap(graph);
         });
 
-        d.backward();
+        target.backward();
+        
 
         animator.last();
     </script>

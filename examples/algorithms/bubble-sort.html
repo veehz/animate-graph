@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dijkstra Visualization</title>
+    <link rel="stylesheet" href="../../dist/animate-graph.css" />
+</head>
+<body>
+    <div id="controls" style="margin-bottom: 10px;"></div>
+    <div id="graph-container" style="border: 1px solid #ccc; height: 600px; width: 100%;"></div>
+
+    <script type="module">
+        import { Graph, Node, Edge, Animator, Slider } from "@veehz/animate-graph";
+
+        const arr = [3, 1, 4, 1, 5, 9, 2, 6];
+
+        const animator = new Animator();
+        const slider = new Slider("#controls", animator);
+
+        const container = document.getElementById("graph-container");
+        const graph = new Graph("#graph-container", {
+            height: container.clientHeight,
+            width: container.clientWidth
+        });
+
+        graph.insertNode(new Node(0, arr[0]));
+        for(let i = 1; i < arr.length; i++) {
+            graph.insertNodeAfter(new Node(i, arr[i]), [i - 1]);
+        }
+
+        animator.snap(graph);
+
+        for(let i = 0; i < arr.length - 1; i++) {
+            for(let j = i+1; j < arr.length; j++) {
+                graph.highlight(i);
+                graph.highlight(j);
+                animator.snap(graph);
+
+                if(arr[i] > arr[j]) {
+                    graph.name(i, arr[j]);
+                    graph.name(j, arr[i]);
+                    graph.label(i, "swap");
+                    graph.label(j, "swap");
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                    animator.snap(graph);
+                }
+
+                graph.label(i, "");
+                graph.label(j, "");
+                graph.remove_highlight(i);
+                graph.remove_highlight(j);
+                animator.snap(graph);
+            }
+        }
+
+        animator.last();
+    </script>
+</body>
+</html>

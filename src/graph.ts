@@ -385,6 +385,17 @@ export class Graph {
     }
   }
 
+  public name(object: string | Node, name: string | ((obj: object) => string)) {
+    if (object instanceof Node) {
+      object.name = name;
+      this.update();
+    } else {
+      const n = this.getNode(object);
+      if (n) n.name = name;
+      this.update();
+    }
+  }
+
   /**
    * Clones the graph.
    * @returns A new Graph instance with the same nodes and edges.
