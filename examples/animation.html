@@ -54,52 +54,52 @@
         // Highlighting
 
         setTimeout(() => {
-            graph.highlight("n-a");
+            graph.color("n-a", 1);
             animator.snap(graph);
         }, 500);
 
         setTimeout(() => {
-            graph.highlight("n-a-n-d");
+            graph.color("n-a-n-d", 1);
             animator.snap(graph);
         }, 600);
 
         setTimeout(() => {
-            graph.highlight("n-d");
+            graph.color("n-d", 1);
             animator.snap(graph);
         }, 700);
 
         setTimeout(() => {
-            graph.highlight("n-d-n-f");
+            graph.color("n-d-n-f", 1);
             animator.snap(graph);
         }, 800);
 
         setTimeout(() => {
-            graph.highlight("n-f");
+            graph.color("n-f", 1);
             animator.snap(graph);
         }, 900);
 
         setTimeout(() => {
-            graph.remove_highlight("n-f");
+            graph.color("n-f", 0);
             animator.snap(graph);
         }, 1000);
 
         setTimeout(() => {
-            graph.remove_highlight("n-d-n-f");
+            graph.color("n-d-n-f", 0);
             animator.snap(graph);
         }, 1100);
 
         setTimeout(() => {
-            graph.remove_highlight("n-d");
+            graph.color("n-d", 0);
             animator.snap(graph);
         }, 1200);
 
         setTimeout(() => {
-            graph.remove_highlight("n-a-n-d");
+            graph.color("n-a-n-d", 0);
             animator.snap(graph);
         }, 1300);
 
         setTimeout(() => {
-            graph.remove_highlight("n-a");
+            graph.color("n-a", 0);
             animator.snap(graph);
             animator.last();
         }, 1400);

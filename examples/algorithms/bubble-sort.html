@@ -31,8 +31,8 @@
 
         for(let i = 0; i < arr.length - 1; i++) {
             for(let j = i+1; j < arr.length; j++) {
-                graph.highlight(i);
-                graph.highlight(j);
+                graph.color(i, 1);
+                graph.color(j, 1);
                 animator.snap(graph);
 
                 if(arr[i] > arr[j]) {
@@ -46,8 +46,8 @@
 
                 graph.label(i, "");
                 graph.label(j, "");
-                graph.remove_highlight(i);
-                graph.remove_highlight(j);
+                graph.color(i, 0);
+                graph.color(j, 0);
                 animator.snap(graph);
             }
         }

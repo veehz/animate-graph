@@ -48,32 +48,24 @@
 
         animator.snap(graph);
 
-        const stack = [root];
         const visited = new Set();
         let counter = 1;
+        function dfs(u, parent) {
+            graph.color(nodes[u], 1);
+            graph.label(nodes[u], `Visited ${counter++}`);
+            animator.snap(graph);
 
-        while (stack.length > 0) {
-            const u = stack.pop();
-
-            if (!visited.has(u)) {
-                visited.add(u);
-
-                graph.highlight(nodes[u]);
-                graph.label(nodes[u], `Visited ${counter++}`);
-                animator.snap(graph);
-
-                // Reverse to visit left branch first
-                const neighbors = [...adj[u]].reverse();
-                for (const v of neighbors) {
-                    if (!visited.has(v)) {
-                        stack.push(v);
-
-                        graph.highlight(Edge.defaultEdgeId(u, v));
-                        animator.snap(graph);
-                    }
+            const neighbors = adj[u];
+            for (const v of neighbors) {
+                if(v !== parent) {
+                    dfs(v, u);
                 }
             }
+            graph.color(nodes[u], 2);
+            animator.snap(graph);
         }
+
+        dfs(root, root);
 
         animator.last();
 

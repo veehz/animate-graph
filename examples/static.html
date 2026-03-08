@@ -52,22 +52,22 @@
         }, 400);
 
         setTimeout(() => {
-            graph.highlight("n-f");
+            graph.color("n-f", 1);
             console.log("Highlighted Node F by ID");
         }, 500);
 
         setTimeout(() => {
-            graph.remove_highlight("n-f");
+            graph.color("n-f", 0);
             console.log("Removed highlight from Node F by ID");
         }, 600);
 
         setTimeout(() => {
-            graph.highlight(nodeB);
+            graph.color(nodeB, 1);
             console.log("Highlighted Node B");
         }, 700);
 
         setTimeout(() => {
-            graph.highlight("n-a-n-c");
+            graph.color("n-a-n-c", 1);
             console.log("Highlighted Edge A -> C");
         }, 800);
     </script>

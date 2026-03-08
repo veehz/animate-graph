@@ -71,35 +71,35 @@
         animator.snap(graph);
 
         torch.eventBus.addEventListener(torch.events.TENSOR_BEFORE_BACKWARD, (e) => {
-            graph.highlight(e.detail.tensor.id);
+            graph.color(e.detail.tensor.id, 1);
             animator.snap(graph);
         });
         torch.eventBus.addEventListener(torch.events.TENSOR_AFTER_BACKWARD, (e) => {
-            graph.remove_highlight(e.detail.tensor.id);
+            graph.color(e.detail.tensor.id, 0);
             animator.snap(graph);
         });
 
         torch.eventBus.addEventListener(torch.events.OPERATION_BEFORE_BACKWARD, (e) => {
-            graph.highlight(e.detail.operation.id);
+            graph.color(e.detail.operation.id, 1);
             animator.snap(graph);
         });
         torch.eventBus.addEventListener(torch.events.OPERATION_AFTER_BACKWARD, (e) => {
-            graph.remove_highlight(e.detail.operation.id);
+            graph.color(e.detail.operation.id, 0);
             animator.snap(graph);
         });
-        
+
         torch.eventBus.addEventListener(torch.events.OPERATION_AFTER_ACCUMULATE_GRAD, (e) => {
-            graph.highlight(e.detail.operation.variable.id);
+            graph.color(e.detail.operation.variable.id, 1);
             animator.snap(graph);
 
             graph.label(e.detail.operation.variable.id, `grad=[${e.detail.operation.variable.grad.data.map(x => x.toFixed(2)).join(", ")}]`);
 
-            graph.remove_highlight(e.detail.operation.variable.id);
+            graph.color(e.detail.operation.variable.id, 0);
             animator.snap(graph);
         });
 
         target.backward();
-        
+
 
         animator.last();
     </script>

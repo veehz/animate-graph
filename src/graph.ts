@@ -10,9 +10,8 @@ export class Graph {
   public height: number;
   public nodes: Node[];
   public edges: Edge[];
-
-  public highlighted_nodes: Set<NodeIdType>;
-  public highlighted_edges: Set<EdgeIdType>;
+  public node_colors: Map<NodeIdType, number>;
+  public edge_colors: Map<EdgeIdType, number>;
 
   private container: d3.Selection<d3.BaseType, unknown, HTMLElement, any>;
   private svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
@@ -41,9 +40,8 @@ export class Graph {
 
     this.nodes = [];
     this.edges = [];
-
-    this.highlighted_nodes = new Set<NodeIdType>();
-    this.highlighted_edges = new Set<EdgeIdType>();
+    this.node_colors = new Map<NodeIdType, number>();
+    this.edge_colors = new Map<EdgeIdType, number>();
 
     this.style = parseGraphStyle();
 
@@ -70,32 +68,17 @@ export class Graph {
       .append("defs")
       .append("marker")
       .attr("id", "arrowhead")
+      .attr("markerUnits", "userSpaceOnUse")
       .attr("viewBox", "-0 -5 10 10")
       .attr("refX", refX)
       .attr("refY", 0)
       .attr("orient", "auto")
-      .attr("markerWidth", 6)
-      .attr("markerHeight", 6)
+      .attr("markerWidth", 12)
+      .attr("markerHeight", 12)
       .attr("xoverflow", "visible")
       .append("svg:path")
       .attr("d", "M 0,-5 L 10 ,0 L 0,5")
-      .attr("fill", "#999")
-      .style("stroke", "none");
-
-    this.svg
-      .append("defs")
-      .append("marker")
-      .attr("id", "arrowhead-highlighted")
-      .attr("viewBox", "-0 -5 10 10")
-      .attr("refX", refX)
-      .attr("refY", 0)
-      .attr("orient", "auto")
-      .attr("markerWidth", 6)
-      .attr("markerHeight", 6)
-      .attr("xoverflow", "visible")
-      .append("svg:path")
-      .attr("d", "M 0,-5 L 10 ,0 L 0,5")
-      .attr("fill", "orange")
+      .attr("fill", "currentColor")
       .style("stroke", "none");
 
     this.g = this.svg.append("g");
@@ -142,7 +125,7 @@ export class Graph {
 
     linkEnter.append("line").attr("class", "g_edge");
 
-    linkEnter.append("text").attr("class", "edge-label");
+    linkEnter.append("text").attr("class", "g_edge_label");
 
     const linkMerge = linkEnter.merge(links);
 
@@ -161,7 +144,7 @@ export class Graph {
           .attr("y2", coords.y2)
           .classed("directed", d.direction === "directed");
 
-        group.select(".edge-label")
+        group.select(".g_edge_label")
           .text(d.label !== null ? d.label : "")
           .attr("x", (coords.x1 + coords.x2) / 2)
           .attr("y", (coords.y1 + coords.y2) / 2);
@@ -196,9 +179,16 @@ export class Graph {
     nodeMerge.select("title").text((d) => d.id);
 
     nodeMerge.attr("transform", (d) => `translate(${d.x},${d.y})`);
+    nodeMerge.attr("class", (d) => {
+      const c = this.node_colors.get(d.id) || 0;
+      return `g_node${c > 0 ? ` color-${c}` : ""}`;
+    });
 
-    nodeMerge.classed("highlighted", (d) => this.highlighted_nodes.has(d.id));
-    linkMerge.select(".g_edge").classed("highlighted", (d) => this.highlighted_edges.has(d.id));
+    linkMerge.select(".g_edge").attr("class", (d) => {
+      const c = this.edge_colors.get(d.id) || 0;
+      const directed = d.direction === "directed" ? " directed" : "";
+      return `g_edge${directed}${c > 0 ? ` color-${c}` : ""}`;
+    }).attr("marker-end", d => d.direction === "directed" ? "url(#arrowhead)" : null);
   }
 
   /**
@@ -407,8 +397,8 @@ export class Graph {
     });
     graph.nodes = deepCloneElements ? this.nodes.map((n) => n.clone()) : [...this.nodes];
     graph.edges = deepCloneElements ? this.edges.map((e) => e.clone()) : [...this.edges];
-    graph.highlighted_nodes = new Set<NodeIdType>(this.highlighted_nodes);
-    graph.highlighted_edges = new Set<EdgeIdType>(this.highlighted_edges);
+    graph.node_colors = new Map<NodeIdType, number>(this.node_colors);
+    graph.edge_colors = new Map<EdgeIdType, number>(this.edge_colors);
     graph.offset = deepCloneOffset ? { ...this.offset } : this.offset;
     graph.updateTransform();
     return graph;
@@ -434,38 +424,23 @@ export class Graph {
     this.svg.remove();
   }
 
-  public highlight(object: string | Node | Edge) {
+  public color(object: string | Node | Edge, colorInt: number = 0) {
     if (object instanceof Node) {
-      this.highlighted_nodes.add(object.id);
+      if (colorInt === 0) this.node_colors.delete(object.id);
+      else this.node_colors.set(object.id, colorInt);
     } else if (object instanceof Edge) {
-      this.highlighted_edges.add(object.id);
+      if (colorInt === 0) this.edge_colors.delete(object.id);
+      else this.edge_colors.set(object.id, colorInt);
     } else {
       const node = this.getNode(object);
       if (node) {
-        this.highlighted_nodes.add(node.id);
+        if (colorInt === 0) this.node_colors.delete(node.id);
+        else this.node_colors.set(node.id, colorInt);
       }
       const edge = this.getEdge(object);
       if (edge) {
-        this.highlighted_edges.add(edge.id);
-      }
-    }
-
-    this.update();
-  }
-
-  public remove_highlight(object: string | Node | Edge) {
-    if (object instanceof Node) {
-      this.highlighted_nodes.delete(object.id);
-    } else if (object instanceof Edge) {
-      this.highlighted_edges.delete(object.id);
-    } else {
-      const node = this.getNode(object);
-      if (node) {
-        this.highlighted_nodes.delete(node.id);
-      }
-      const edge = this.getEdge(object);
-      if (edge) {
-        this.highlighted_edges.delete(edge.id);
+        if (colorInt === 0) this.edge_colors.delete(edge.id);
+        else this.edge_colors.set(edge.id, colorInt);
       }
     }
 

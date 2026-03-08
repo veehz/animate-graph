@@ -57,7 +57,7 @@
         dist[root] = 0;
         graph.label(root, "0");
         animator.snap(graph);
-        
+
         while (unvisited.size > 0) {
             let u = null;
             let minDist = Infinity;
@@ -70,15 +70,15 @@
             if (u === null) break;
 
             unvisited.delete(u);
-            graph.highlight(nodes[u]);
+            graph.color(nodes[u], 1);
             animator.snap(graph);
-            
+
             for (const edge of adj[u]) {
                 const v = edge.target;
                 const edgeId = Edge.defaultEdgeId(u, v);
                 if (!unvisited.has(v)) continue;
 
-                graph.highlight(edgeId);
+                graph.color(edgeId, 1);
                 animator.snap(graph);
 
                 const alt = dist[u] + edge.weight;
@@ -87,7 +87,7 @@
                     graph.label(nodes[v], alt.toString());
                     animator.snap(graph);
                 }
-                graph.remove_highlight(edgeId);
+                graph.color(edgeId, 0);
             }
         }
 

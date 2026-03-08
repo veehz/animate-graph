@@ -51,7 +51,7 @@
         const queue = [root];
         const visited = new Set([root]);
 
-        graph.highlight(nodes[root]);
+        graph.color(nodes[root], 1);
         graph.label(nodes[root], "0");
         animator.snap(graph);
 
@@ -68,10 +68,10 @@
                         visited.add(v);
                         queue.push(v);
 
-                        graph.highlight(Edge.defaultEdgeId(u, v));
+                        graph.color(Edge.defaultEdgeId(u, v), 1);
                         animator.snap(graph);
 
-                        graph.highlight(nodes[v]);
+                        graph.color(nodes[v], 1);
                         graph.label(nodes[v], distance.toString());
                         animator.snap(graph);
                     }
