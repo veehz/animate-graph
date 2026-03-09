@@ -17,15 +17,18 @@
         const torch = window.torch;
 
         const a = new torch.Tensor([1, 2, 3], { requires_grad: true });
+        a.name = "a";
         console.log(a);
 
         const b = new torch.Tensor([4, 5, 6], { requires_grad: true });
+        b.name = "b";
         console.log(b);
 
         const c = a.mul(b);
         console.log(c);
 
-        const d = c.sum();
+        const target = c.sum();
+        target.name = "target";
 
         const animator = new Animator();
         const slider = new Slider("#controls", animator);
@@ -37,7 +40,7 @@
 
         function buildGraph(graph, tensor) {
             function buildAccumulateGrad(operation) {
-                const tensorNode = new Node(operation.variable.id, "t"+operation.variable.id);
+                const tensorNode = new Node(operation.variable.id, operation.variable.name ?? "t"+operation.variable.id);
                 const accumNode = new Node(operation.id, "Accum");
                 graph.insertNode(tensorNode);
                 graph.insertNodeAfter(accumNode, tensorNode);
@@ -54,12 +57,13 @@
                     operationsBefore.push(buildOperation(op));
                 }
 
-                const operationNode = new Node(operation.id, operation.constructor.name);
+                const capitalize = (s) => s[0].toUpperCase() + s.slice(1);
+                const operationNode = new Node(operation.id, capitalize(operation.constructor.name));
                 graph.insertNodeAfter(operationNode, operationsBefore);
                 return operationNode;
             }
 
-            const output = new Node(tensor.id, "t"+tensor.id);
+            const output = new Node(tensor.id, tensor.name ?? "t"+tensor.id);
             if (tensor.grad_fn) {
                 const operation = buildOperation(tensor.grad_fn);
                 graph.insertNodeAfter(output, operation);
@@ -68,7 +72,7 @@
             }
         }
 
-        buildGraph(graph, d);
+        buildGraph(graph, target);
         animator.snap(graph);
 
         torch.eventBus.addEventListener(torch.events.TENSOR_BEFORE_BACKWARD, (e) => {
@@ -99,7 +103,7 @@
             animator.snap(graph);
         });
 
-        d.backward();
+        target.backward();
 
         animator.last();
     </script>
