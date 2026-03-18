@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="../../dist/animate-graph.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="../../dist/animate-graph.umd.js"></script>
+    <script src="https://veehz.github.io/torch/build/browser/torch.browser.umd.js"></script>
+</head>
+
+<body>
+    <div id="controls" style="margin-bottom: 10px;">
+        <!-- Slider will be injected here -->
+    </div>
+    <div id="graph-container" style="border: 1px solid #ccc; height: 600px;"></div>
+    <script>
+        const { Graph, Node, Animator, Slider } = AnimateGraph;
+        const torch = window.torch;
+
+        const animator = new Animator();
+        const slider = new Slider("#controls", animator);
+
+        const graph = new Graph("#graph-container", {
+            height: document.getElementById("graph-container").clientHeight,
+            width: document.getElementById("graph-container").clientWidth
+        });
+
+        // The input tensor to the model. requires_grad true so backward flows to it
+        const x = new torch.Tensor([1.0, 2.0, 3.0], { requires_grad: true });
+
+        const s = new torch.nn.Sequential(
+            new torch.nn.Linear(3, 4),
+            new torch.nn.ReLU(),
+            new torch.nn.Linear(4, 2)
+        );
+
+        // Map containing model structure -> visual nodes/edges
+        const moduleVisuals = new Map();
+
+        let previousLayerNodes = [];
+        const inputNodes = [];
+
+        // Input layer nodes
+        for (let i = 0; i < x.shape[0]; i++) {
+            const node = new Node(`input_${i}`, `in_${i}`);
+            node.label = `v: ${x.data[i].toFixed(2)}`;
+            graph.insertNode(node);
+            previousLayerNodes.push(node);
+            inputNodes.push(node);
+        }
+
+        animator.snap(graph);
+
+        // Build Graph
+        for (let i = 0; i < s._modulesArr.length; i++) {
+            const m = s._modulesArr[i];
+            const currentLayerNodes = [];
+            const moduleEdges = [];
+            const moduleNodes = [];
+
+            if (m.constructor.name === "Linear") {
+                const outFeatures = m.bias.shape[0];
+                const inFeatures = previousLayerNodes.length;
+
+                for (let j = 0; j < outFeatures; j++) {
+                    const node = new Node(`${i}_bias_${j}`, `b_${j}`);
+                    node.label = `b: ${m.bias.data[j].toFixed(2)}`;
+                    graph.insertNodeAfter(node, previousLayerNodes, { showLabelOnHover: true });
+                    currentLayerNodes.push(node);
+                    moduleNodes.push(node);
+
+                    // Edges are automatically inserted by insertNodeAfter
+                }
+
+                // Collect edges that were just created
+                for (let j = 0; j < currentLayerNodes.length; j++) {
+                    const target = currentLayerNodes[j];
+                    for (let k = 0; k < previousLayerNodes.length; k++) {
+                        const source = previousLayerNodes[k];
+                        const edge = graph.edges.find(e => e.source.id === source.id && e.target.id === target.id);
+                        if (edge) {
+                            moduleEdges.push(edge);
+                            edge.sourceIndex = k;
+                            edge.targetIndex = j;
+                            edge.label = `w: ${m.weight.data[j * inFeatures + k].toFixed(2)}`;
+                        }
+                    }
+                }
+            } else {
+                // ReLU, Sigmoid etc.
+                // 1-to-1 mapping
+                for (let j = 0; j < previousLayerNodes.length; j++) {
+                    const node = new Node(`${i}_act_${j}`, `${m.constructor.name}`);
+                    graph.insertNodeAfter(node, [previousLayerNodes[j]], { showLabelOnHover: true });
+                    currentLayerNodes.push(node);
+                    moduleNodes.push(node);
+
+                    const edge = graph.edges.find(e => e.source.id === previousLayerNodes[j].id && e.target.id === node.id);
+                    if (edge) moduleEdges.push(edge);
+                }
+            }
+
+            previousLayerNodes = currentLayerNodes;
+            moduleVisuals.set(m.id, { nodes: moduleNodes, edges: moduleEdges });
+            animator.snap(graph);
+        }
+
+        let currentActiveModule = null;
+        const operationToModule = new Map();
+
+        // Track operations created by modules
+        torch.eventBus.addEventListener(torch.events.OPERATION_AFTER_FORWARD, (e) => {
+            if (currentActiveModule) {
+                operationToModule.set(e.detail.operation.id, currentActiveModule);
+            }
+        });
+
+        // Patch module forward to just intercept them directly instead of forcing sequential iteration
+        for (const m of s._modulesArr) {
+            const orig = m.forward.bind(m);
+            m.forward = function(...args) {
+                currentActiveModule = m;
+                const visuals = moduleVisuals.get(m.id);
+                visuals.nodes.forEach(n => graph.color(n.id, 1));
+                visuals.edges.forEach(e => graph.color(e.id, 1));
+                animator.snap(graph);
+
+                const res = orig(...args);
+
+                visuals.nodes.forEach(n => graph.color(n.id, 0));
+                visuals.edges.forEach(e => graph.color(e.id, 0));
+                animator.snap(graph);
+
+                currentActiveModule = null;
+                return res;
+            }
+        }
+
+        // Visualize backward operations mapping to modules using the tracking we did in forward
+        torch.eventBus.addEventListener(torch.events.OPERATION_BEFORE_BACKWARD, (e) => {
+            const m = operationToModule.get(e.detail.operation.id);
+            if (m) {
+                const visuals = moduleVisuals.get(m.id);
+                if (visuals) {
+                    visuals.nodes.forEach(n => graph.color(n.id, 1));
+                    visuals.edges.forEach(e => graph.color(e.id, 1));
+                    animator.snap(graph);
+                }
+            }
+        });
+
+        torch.eventBus.addEventListener(torch.events.OPERATION_AFTER_BACKWARD, (e) => {
+            const m = operationToModule.get(e.detail.operation.id);
+            if (m) {
+                const visuals = moduleVisuals.get(m.id);
+                if (visuals) {
+                    visuals.nodes.forEach(n => graph.color(n.id, 0));
+                    visuals.edges.forEach(e => graph.color(e.id, 0));
+                    animator.snap(graph);
+                }
+            }
+        });
+
+        // Update labels on accumulate grad
+        torch.eventBus.addEventListener(torch.events.OPERATION_AFTER_ACCUMULATE_GRAD, (e) => {
+            const variable = e.detail.operation.variable; // The parameter or input tensor
+
+            if (variable.id === x.id) {
+                inputNodes.forEach((node, idx) => {
+                    node.label = `v: ${variable.data[idx].toFixed(2)} | g: ${variable.grad.data[idx].toFixed(2)}`;
+                    graph.color(node.id, 1);
+                });
+                animator.snap(graph);
+                inputNodes.forEach(node => graph.color(node.id, 0));
+                animator.snap(graph);
+                return;
+            }
+
+            for (const m of s._modulesArr) {
+                const visuals = moduleVisuals.get(m.id);
+                if (m.bias && variable.id === m.bias.id) {
+                    visuals.nodes.forEach((node, j) => {
+                        node.label = `b: ${variable.data[j].toFixed(2)} | g: ${variable.grad.data[j].toFixed(2)}`;
+                        graph.color(node.id, 1);
+                    });
+                    animator.snap(graph);
+                    visuals.nodes.forEach(node => graph.color(node.id, 0));
+                    animator.snap(graph);
+                } else if (m.weight && variable.id === m.weight.id) {
+                    const inFeatures = m.weight.shape[1];
+                    visuals.edges.forEach((edge) => {
+                        const j = edge.targetIndex;
+                        const k = edge.sourceIndex;
+                        if (j !== undefined && k !== undefined) {
+                            edge.label = `w: ${variable.data[j * inFeatures + k].toFixed(2)} | g: ${variable.grad.data[j * inFeatures + k].toFixed(2)}`;
+                            graph.color(edge.id, 1);
+                        }
+                    });
+                    animator.snap(graph);
+                    visuals.edges.forEach(edge => graph.color(edge.id, 0));
+                    animator.snap(graph);
+                }
+            }
+        });
+
+        // Standard forward sequential execution
+        let y = s.forward(x);
+        let loss = y.sum();
+        loss.backward();
+
+        animator.last();
+    </script>
+</body>
+
+</html>
