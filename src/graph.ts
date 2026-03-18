@@ -4,6 +4,13 @@ import { Edge, EdgeIdType } from "./edge";
 import "./style.css";
 import { GraphStyle, parseGraphStyle } from "./constants";
 
+interface EdgeOptions {
+  direction?: "directed" | "undirected";
+  type?: string;
+  label?: string | ((obj: object) => string);
+  showLabelOnHover?: boolean;
+}
+
 export class Graph {
   public selector: string;
   public width: number;
@@ -123,9 +130,21 @@ export class Graph {
       .append("g")
       .attr("class", "g_edge_wrapper");
 
+    linkEnter.append("line").attr("class", "g_edge_hitarea");
     linkEnter.append("line").attr("class", "g_edge");
-
     linkEnter.append("text").attr("class", "g_edge_label");
+
+    linkEnter
+      .on("mouseover", function(_event, d) {
+        if (d.showLabelOnHover) {
+          d3.select(this).select(".g_edge_label").text(d.label ?? "");
+        }
+      })
+      .on("mouseout", function(_event, d) {
+        if (d.showLabelOnHover) {
+          d3.select(this).select(".g_edge_label").text("");
+        }
+      });
 
     const linkMerge = linkEnter.merge(links);
 
@@ -137,6 +156,12 @@ export class Graph {
 
         const group = d3.select(nodes[i]);
 
+        group.select(".g_edge_hitarea")
+          .attr("x1", coords.x1)
+          .attr("y1", coords.y1)
+          .attr("x2", coords.x2)
+          .attr("y2", coords.y2);
+
         group.select(".g_edge")
           .attr("x1", coords.x1)
           .attr("y1", coords.y1)
@@ -144,8 +169,9 @@ export class Graph {
           .attr("y2", coords.y2)
           .classed("directed", d.direction === "directed");
 
+        const labelText = d.label !== null ? d.label : "";
         group.select(".g_edge_label")
-          .text(d.label !== null ? d.label : "")
+          .text(d.showLabelOnHover ? "" : labelText)
           .attr("x", (coords.x1 + coords.x2) / 2)
           .attr("y", (coords.y1 + coords.y2) / 2);
       }
@@ -219,6 +245,7 @@ export class Graph {
   public insertNodeAfter(
     node: NodeIdType | Node,
     afterNodes: NodeIdType | Node | (NodeIdType | Node)[],
+    options: EdgeOptions = {},
   ) {
     node = this.getNode(node);
     const sources = Array.isArray(afterNodes) ? afterNodes : [afterNodes];
@@ -258,20 +285,21 @@ export class Graph {
     this.insertNode(node);
 
     sources.forEach((source) => {
-      this.insertEdge(source, node);
+      this.insertEdge(source, node, options);
     });
   }
 
   public insertNodesAfter(
     nodes: Node | Node[],
     afterNodes: NodeIdType | Node | (NodeIdType | Node)[],
+    options: EdgeOptions = {},
   ) {
     if (Array.isArray(nodes)) {
       nodes.forEach((node) => {
-        this.insertNodeAfter(node, afterNodes);
+        this.insertNodeAfter(node, afterNodes, options);
       });
     } else {
-      this.insertNodeAfter(nodes, afterNodes);
+      this.insertNodeAfter(nodes, afterNodes, options);
     }
   }
 
@@ -283,6 +311,7 @@ export class Graph {
   public insertNodeBefore(
     node: NodeIdType | Node,
     beforeNodes: NodeIdType | Node | (NodeIdType | Node)[],
+    options: EdgeOptions = {},
   ) {
     node = this.getNode(node);
     const targets = Array.isArray(beforeNodes) ? beforeNodes : [beforeNodes];
@@ -334,13 +363,14 @@ export class Graph {
   public insertNodesBefore(
     nodes: Node | Node[],
     beforeNodes: NodeIdType | Node | (NodeIdType | Node)[],
+    options: EdgeOptions = {},
   ) {
     if (Array.isArray(nodes)) {
       nodes.forEach((node) => {
-        this.insertNodeBefore(node, beforeNodes);
+        this.insertNodeBefore(node, beforeNodes, options);
       });
     } else {
-      this.insertNodeBefore(nodes, beforeNodes);
+      this.insertNodeBefore(nodes, beforeNodes, options);
     }
   }
 
@@ -355,9 +385,9 @@ export class Graph {
   public insertEdge(
     source: NodeIdType | Node,
     target: NodeIdType | Node,
-    options: { direction?: "directed" | "undirected"; type?: string; label?: string | ((obj: object) => string) } = {},
+    options: EdgeOptions = {},
   ) {
-    const edge = new Edge(source, target, options.direction, options.type, options.label);
+    const edge = new Edge(source, target, options.direction, options.type, options.label, null, options.showLabelOnHover);
     this.edges.push(edge);
     this.update();
   }

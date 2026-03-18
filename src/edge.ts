@@ -10,6 +10,7 @@ export class Edge {
   type: string;
 
   _label: string | ((obj: object) => string);
+  showLabelOnHover: boolean;
 
   constructor(
     source: NodeIdType | Node,
@@ -18,6 +19,7 @@ export class Edge {
     type: string = "default",
     label: string | ((obj: object) => string) = "",
     id: EdgeIdType | null = null,
+    showLabelOnHover: boolean = false,
   ) {
     this.source = source;
     this.target = target;
@@ -25,6 +27,7 @@ export class Edge {
     this.type = type;
     this._label = label;
     this.id = id || Edge.defaultEdgeId(source, target);
+    this.showLabelOnHover = showLabelOnHover;
   }
 
   static defaultEdgeId(source: NodeIdType | Node, target: NodeIdType | Node): EdgeIdType {
@@ -43,6 +46,6 @@ export class Edge {
   }
 
   public clone(): Edge {
-    return new Edge(this.source, this.target, this.direction, this.type, this._label, this.id);
+    return new Edge(this.source, this.target, this.direction, this.type, this._label, this.id, this.showLabelOnHover);
   }
 }

@@ -34,6 +34,13 @@
     text-anchor: middle;
 }
 
+.g_edge_hitarea {
+    stroke: transparent;
+    stroke-width: 10px;
+    fill: none;
+    cursor: pointer;
+}
+
 .g_edge {
     color: #999;
     stroke: currentColor;

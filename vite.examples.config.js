@@ -15,6 +15,7 @@ export default defineConfig({
         "import-umd": resolve(__dirname, "examples/import/umd.html"),
         "import-src": resolve(__dirname, "examples/import/src.html"),
         backpropagation: resolve(__dirname, "examples/backpropagation/index.html"),
+        "neural-network": resolve(__dirname, "examples/neural-network/index.html"),
         bfs: resolve(__dirname, "examples/algorithms/bfs.html"),
         dfs: resolve(__dirname, "examples/algorithms/dfs.html"),
         dijkstra: resolve(__dirname, "examples/algorithms/dijkstra.html"),

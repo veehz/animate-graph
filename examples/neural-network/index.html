@@ -65,7 +65,7 @@
                 for (let j = 0; j < outFeatures; j++) {
                     const node = new Node(`${i}_bias_${j}`, `b_${j}`);
                     node.label = `b: ${m.bias.data[j].toFixed(2)}`;
-                    graph.insertNodeAfter(node, previousLayerNodes);
+                    graph.insertNodeAfter(node, previousLayerNodes, { showLabelOnHover: true });
                     currentLayerNodes.push(node);
                     moduleNodes.push(node);
 
@@ -91,7 +91,7 @@
                 // 1-to-1 mapping
                 for (let j = 0; j < previousLayerNodes.length; j++) {
                     const node = new Node(`${i}_act_${j}`, `${m.constructor.name}`);
-                    graph.insertNodeAfter(node, [previousLayerNodes[j]]);
+                    graph.insertNodeAfter(node, [previousLayerNodes[j]], { showLabelOnHover: true });
                     currentLayerNodes.push(node);
                     moduleNodes.push(node);
 
