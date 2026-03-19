@@ -52,6 +52,12 @@ export class Graph {
 
     this.style = parseGraphStyle();
 
+    this.initSvg();
+    this.updateTransform();
+    this.update();
+  }
+
+  private initSvg() {
     this.container = d3.select(this.selector);
     this.container.text("");
     this.container.selectAll("*").remove();
@@ -102,9 +108,6 @@ export class Graph {
           this.updateTransform();
         })
     );
-
-    this.updateTransform();
-    this.update();
   }
 
   public updateTransform() {
@@ -438,11 +441,7 @@ export class Graph {
    * Activates the graph, appending it to the container.
    */
   public activate() {
-    this.container.text("");
-    this.container.selectAll("*").remove();
-    (this.container.node() as Element)?.appendChild(
-      this.svg.node() as unknown as globalThis.Node,
-    );
+    this.initSvg();
     this.updateTransform();
     this.update();
   }
