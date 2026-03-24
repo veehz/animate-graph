@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="../../dist/animate-graph.css">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="../../dist/animate-graph.umd.js"></script>
-    <script src="https://veehz.github.io/torch/build/browser/torch.browser.umd.js"></script>
+    <script src="https://veehz.github.io/torch/build/torch.min.js"></script>
 </head>
 
 <body>
@@ -34,7 +34,7 @@
             new torch.nn.Linear(4, 2)
         );
 
-        // Map containing model structure -> visual nodes/edges
+        // Map containing model structure -> visual nodes/edges (keyed by module instance)
         const moduleVisuals = new Map();
 
         let previousLayerNodes = [];
@@ -58,7 +58,7 @@
             const moduleEdges = [];
             const moduleNodes = [];
 
-            if (m.constructor.name === "Linear") {
+            if (m instanceof torch.nn.Linear) {
                 const outFeatures = m.bias.shape[0];
                 const inFeatures = previousLayerNodes.length;
 
@@ -90,7 +90,8 @@
                 // ReLU, Sigmoid etc.
                 // 1-to-1 mapping
                 for (let j = 0; j < previousLayerNodes.length; j++) {
-                    const node = new Node(`${i}_act_${j}`, `${m.constructor.name}`);
+                    const actName = m instanceof torch.nn.ReLU ? "ReLU" : m instanceof torch.nn.Sigmoid ? "Sigmoid" : "Act";
+                    const node = new Node(`${i}_act_${j}`, actName);
                     graph.insertNodeAfter(node, [previousLayerNodes[j]], { showLabelOnHover: true });
                     currentLayerNodes.push(node);
                     moduleNodes.push(node);
@@ -101,7 +102,7 @@
             }
 
             previousLayerNodes = currentLayerNodes;
-            moduleVisuals.set(m.id, { nodes: moduleNodes, edges: moduleEdges });
+            moduleVisuals.set(m, { nodes: moduleNodes, edges: moduleEdges });
             animator.snap(graph);
         }
 
@@ -120,7 +121,7 @@
             const orig = m.forward.bind(m);
             m.forward = function(...args) {
                 currentActiveModule = m;
-                const visuals = moduleVisuals.get(m.id);
+                const visuals = moduleVisuals.get(m);
                 visuals.nodes.forEach(n => graph.color(n.id, 1));
                 visuals.edges.forEach(e => graph.color(e.id, 1));
                 animator.snap(graph);
@@ -140,7 +141,7 @@
         torch.eventBus.addEventListener(torch.events.OPERATION_BEFORE_BACKWARD, (e) => {
             const m = operationToModule.get(e.detail.operation.id);
             if (m) {
-                const visuals = moduleVisuals.get(m.id);
+                const visuals = moduleVisuals.get(m);
                 if (visuals) {
                     visuals.nodes.forEach(n => graph.color(n.id, 1));
                     visuals.edges.forEach(e => graph.color(e.id, 1));
@@ -152,7 +153,7 @@
         torch.eventBus.addEventListener(torch.events.OPERATION_AFTER_BACKWARD, (e) => {
             const m = operationToModule.get(e.detail.operation.id);
             if (m) {
-                const visuals = moduleVisuals.get(m.id);
+                const visuals = moduleVisuals.get(m);
                 if (visuals) {
                     visuals.nodes.forEach(n => graph.color(n.id, 0));
                     visuals.edges.forEach(e => graph.color(e.id, 0));
@@ -177,7 +178,7 @@
             }
 
             for (const m of s._modulesArr) {
-                const visuals = moduleVisuals.get(m.id);
+                const visuals = moduleVisuals.get(m);
                 if (m.bias && variable.id === m.bias.id) {
                     visuals.nodes.forEach((node, j) => {
                         node.label = `b: ${variable.data[j].toFixed(2)} | g: ${variable.grad.data[j].toFixed(2)}`;
